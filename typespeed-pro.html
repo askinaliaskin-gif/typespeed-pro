@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TypeSpeed PRO — World Open</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0f;
+    --surface: #141418;
+    --surface2: #1c1c22;
+    --border: #2a2a35;
+    --accent: #e8ff47;
+    --accent2: #47ffd4;
+    --accent3: #ff4778;
+    --text: #e8e8f0;
+    --muted: #555568;
+    --correct: #47ffd4;
+    --wrong: #ff4778;
+    --pending: #3a3a4a;
+    --cursor: #e8ff47;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* GRAIN OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 40px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    z-index: 10;
+  }
+
+  .logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--accent); }
+
+  .header-stats {
+    display: flex;
+    gap: 24px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .streak-badge {
+    background: linear-gradient(135deg, #ff4778, #ff8c47);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* WORLD OPEN BANNER */
+  .world-open-banner {
+    background: linear-gradient(90deg, #e8ff4710, #47ffd410);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 40px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.8rem;
+    color: var(--muted);
+    position: relative;
+    z-index: 10;
+    overflow: hidden;
+  }
+
+  .live-dot {
+    width: 8px;
+    height: 8px;
+    background: #ff4778;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+
+  .world-ticker {
+    display: flex;
+    gap: 32px;
+    animation: ticker 30s linear infinite;
+    white-space: nowrap;
+  }
+
+  .world-ticker span { color: var(--text); }
+  .world-ticker strong { color: var(--accent); }
+
+  @keyframes ticker {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  /* MAIN LAYOUT */
+  main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    position: relative;
+    z-index: 10;
+  }
+
+  /* MODE SELECTOR */
+  .mode-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .mode-label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-right: 8px;
+  }
+
+  .mode-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 6px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.78rem;
+    transition: all 0.15s;
+  }
+
+  .mode-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .mode-btn.active { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 700; }
+
+  .sep { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+
+  /* LIVE WPM GRAPH */
+  .wpm-graph-wrap {
+    height: 60px;
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  #wpmGraph {
+    width: 100%;
+    height: 60px;
+    border-radius: 8px;
+    opacity: 0.6;
+  }
+
+  /* METRICS ROW */
+  .metrics {
+    display: flex;
+    gap: 32px;
+    margin-bottom: 28px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .metric {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .metric-val {
+    font-size: 2.2rem;
+    font-weight: 700;
+    line-height: 1;
+    transition: color 0.2s;
+  }
+
+  .metric-val.wpm-val { color: var(--accent); }
+  .metric-val.acc-val { color: var(--accent2); }
+  .metric-val.time-val { color: var(--text); }
+
+  .metric-label {
+    font-size: 0.65rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* PROGRESS BAR */
+  .progress-wrap {
+    height: 3px;
+    background: var(--pending);
+    border-radius: 2px;
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    border-radius: 2px;
+    transition: width 0.1s linear;
+    width: 0%;
+  }
+
+  /* TYPING AREA */
+  .typing-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 20px;
+    position: relative;
+    cursor: text;
+    transition: border-color 0.2s;
+  }
+
+  .typing-container:focus-within { border-color: var(--accent); }
+
+  .typing-container.shake {
+    animation: shake 0.3s ease;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+  }
+
+  #textDisplay {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.25rem;
+    line-height: 2;
+    letter-spacing: 0.02em;
+    word-break: break-word;
+    position: relative;
+    min-height: 80px;
+    user-select: none;
+  }
+
+  #textDisplay .char {
+    position: relative;
+    color: var(--muted);
+    transition: color 0.08s;
+  }
+
+  #textDisplay .char.correct { color: var(--correct); }
+  #textDisplay .char.wrong {
+    color: var(--wrong);
+    background: rgba(255,71,120,0.15);
+    border-radius: 2px;
+  }
+
+  #textDisplay .char.current {
+    color: var(--text);
+  }
+
+  #textDisplay .char.current::before {
+    content: '';
+    position: absolute;
+    left: -1px;
+    top: 10%;
+    height: 80%;
+    width: 2px;
+    background: var(--cursor);
+    border-radius: 1px;
+    animation: blink 0.8s step-end infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  #hiddenInput {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+  }
+
+  /* CONTROLS ROW */
+  .controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+  }
+
+  .hint { font-size: 0.75rem; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .hint kbd {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 0.7rem;
+  }
+
+  .btn-reset {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 8px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.85rem;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-reset:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* KEYBOARD HEATMAP */
+  .keyboard-section {
+    margin-bottom: 32px;
+  }
+
+  .section-title {
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .keyboard {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .key-row {
+    display: flex;
+    gap: 5px;
+  }
+
+  .key {
+    width: 38px;
+    height: 38px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    position: relative;
+    transition: all 0.1s;
+    flex-shrink: 0;
+  }
+
+  .key.wide { width: 58px; }
+  .key.extra-wide { width: 78px; }
+  .key.space-key { width: 220px; }
+
+  .key.active-key {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+    transform: scale(0.92);
+  }
+
+  .key[data-heat="0"] { background: var(--surface2); }
+  .key[data-heat="1"] { background: rgba(71,255,212,0.15); border-color: rgba(71,255,212,0.3); color: var(--accent2); }
+  .key[data-heat="2"] { background: rgba(232,255,71,0.15); border-color: rgba(232,255,71,0.3); color: var(--accent); }
+  .key[data-heat="3"] { background: rgba(255,140,71,0.2); border-color: rgba(255,140,71,0.4); color: #ff8c47; }
+  .key[data-heat="4"] { background: rgba(255,71,120,0.25); border-color: rgba(255,71,120,0.5); color: var(--wrong); }
+
+  .key .error-dot {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    width: 5px;
+    height: 5px;
+    background: var(--wrong);
+    border-radius: 50%;
+    opacity: 0;
+  }
+
+  .key[data-heat="3"] .error-dot,
+  .key[data-heat="4"] .error-dot { opacity: 1; }
+
+  /* BOTTOM PANELS */
+  .bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+
+  /* HISTORY */
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--surface2);
+    border-radius: 6px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+  }
+
+  .history-wpm { color: var(--accent); font-weight: 700; }
+  .history-acc { color: var(--accent2); }
+  .history-time { color: var(--muted); font-size: 0.65rem; }
+
+  /* WORLD OPEN */
+  .world-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 12px;
+  }
+
+  .world-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 12px;
+    background: var(--surface2);
+    border-radius: 6px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+  }
+
+  .world-rank {
+    color: var(--muted);
+    min-width: 20px;
+  }
+
+  .world-flag { font-size: 1rem; }
+
+  .world-name { flex: 1; color: var(--text); }
+  .world-wpm { color: var(--accent); font-weight: 700; }
+
+  .world-item.you {
+    border: 1px solid var(--accent);
+    background: rgba(232,255,71,0.05);
+  }
+
+  .world-item.you .world-rank { color: var(--accent); }
+
+  /* RESULT OVERLAY */
+  .result-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(13,13,15,0.95);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(8px);
+  }
+
+  .result-overlay.show { display: flex; }
+
+  .result-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 48px;
+    max-width: 520px;
+    width: 90%;
+    text-align: center;
+    animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(40px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .result-rank-badge {
+    display: inline-block;
+    padding: 6px 20px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .result-wpm {
+    font-family: 'Space Mono', monospace;
+    font-size: 5rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .result-wpm-label {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 32px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .result-stats {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    margin-bottom: 32px;
+  }
+
+  .result-stat { text-align: center; }
+
+  .result-stat-val {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--accent2);
+  }
+
+  .result-stat-label {
+    font-size: 0.65rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: 4px;
+  }
+
+  /* WPM chart in result */
+  #resultGraph {
+    width: 100%;
+    height: 70px;
+    margin-bottom: 28px;
+    border-radius: 6px;
+  }
+
+  /* Per-key weakness report */
+  .weak-keys {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+
+  .weak-key-badge {
+    background: rgba(255,71,120,0.15);
+    border: 1px solid rgba(255,71,120,0.4);
+    color: var(--wrong);
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  .result-btns {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    transition: all 0.15s;
+  }
+
+  .btn-primary:hover { transform: scale(1.03); }
+
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 28px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.9rem;
+    transition: all 0.15s;
+  }
+
+  .btn-secondary:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  /* WORLD RANK RESULT */
+  .world-rank-result {
+    margin-bottom: 20px;
+    padding: 12px 20px;
+    background: rgba(232,255,71,0.05);
+    border: 1px solid rgba(232,255,71,0.2);
+    border-radius: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .world-rank-result strong { color: var(--accent); font-size: 1.1rem; }
+
+  /* COUNTDOWN */
+  .countdown-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(13,13,15,0.85);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 8rem;
+    font-weight: 700;
+    color: var(--accent);
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* NEW BEST badge */
+  .new-best {
+    display: none;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #000;
+    padding: 4px 16px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-left: 12px;
+    animation: pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes pop {
+    from { transform: scale(0); }
+    to { transform: scale(1); }
+  }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 24px;
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-family: 'Space Mono', monospace;
+    border-top: 1px solid var(--border);
+    position: relative;
+    z-index: 10;
+  }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    header { padding: 16px 20px; }
+    main { padding: 24px 16px; }
+    .metrics { gap: 20px; }
+    .metric-val { font-size: 1.6rem; }
+    .bottom-grid { grid-template-columns: 1fr; }
+    #textDisplay { font-size: 1rem; }
+    .result-card { padding: 32px 20px; }
+    .result-wpm { font-size: 3.5rem; }
+    .keyboard { transform: scale(0.72); transform-origin: left; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">Type<span>Speed</span>.pro</div>
+  <div class="header-stats">
+    <span id="bestWpmHeader">Best: —</span>
+    <div class="streak-badge" id="streakBadge">🔥 <span id="streakCount">0</span> série</div>
+  </div>
+</header>
+
+<!-- WORLD OPEN TICKER -->
+<div class="world-open-banner">
+  <div class="live-dot"></div>
+  <span style="color:var(--accent);font-weight:700;white-space:nowrap;">WORLD OPEN</span>
+  <div style="overflow:hidden;flex:1;">
+    <div class="world-ticker" id="worldTicker"></div>
+  </div>
+</div>
+
+<main>
+  <!-- MODE SELECTOR -->
+  <div class="mode-row">
+    <span class="mode-label">durée</span>
+    <button class="mode-btn" data-mode="time" data-val="15">15s</button>
+    <button class="mode-btn active" data-mode="time" data-val="30">30s</button>
+    <button class="mode-btn" data-mode="time" data-val="60">60s</button>
+    <button class="mode-btn" data-mode="time" data-val="120">120s</button>
+    <div class="sep"></div>
+    <span class="mode-label">mots</span>
+    <button class="mode-btn" data-mode="words" data-val="25">25</button>
+    <button class="mode-btn" data-mode="words" data-val="50">50</button>
+    <button class="mode-btn" data-mode="words" data-val="100">100</button>
+    <div class="sep"></div>
+    <button class="mode-btn" data-mode="zen" data-val="zen">☯ Zen</button>
+  </div>
+
+  <!-- LIVE WPM GRAPH -->
+  <div class="wpm-graph-wrap">
+    <canvas id="wpmGraph"></canvas>
+  </div>
+
+  <!-- METRICS -->
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-val wpm-val" id="liveWpm">—</div>
+      <div class="metric-label">WPM</div>
+    </div>
+    <div class="metric">
+      <div class="metric-val acc-val" id="liveAcc">—</div>
+      <div class="metric-label">Précision</div>
+    </div>
+    <div class="metric">
+      <div class="metric-val time-val" id="liveTime">30</div>
+      <div class="metric-label">Secondes</div>
+    </div>
+    <div class="metric" id="streakMetric" style="margin-left:auto">
+      <div class="metric-val" id="liveStreak" style="color:var(--accent3)">0</div>
+      <div class="metric-label">Série</div>
+    </div>
+  </div>
+
+  <!-- PROGRESS BAR -->
+  <div class="progress-wrap">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <!-- TYPING AREA -->
+  <div class="typing-container" id="typingContainer" onclick="document.getElementById('hiddenInput').focus()">
+    <div id="textDisplay"></div>
+    <input type="text" id="hiddenInput" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <div class="hint"><kbd>Tab</kbd> pour recommencer • <kbd>Espace</kbd> pour démarrer</div>
+    <button class="btn-reset" onclick="resetGame()">↺ Nouveau texte</button>
+  </div>
+
+  <!-- KEYBOARD HEATMAP -->
+  <div class="keyboard-section" id="keyboardSection">
+    <div class="section-title">Heatmap clavier — touches difficiles</div>
+    <div class="keyboard" id="keyboard"></div>
+  </div>
+
+  <!-- BOTTOM GRID -->
+  <div class="bottom-grid">
+    <!-- HISTORY -->
+    <div class="panel">
+      <div class="section-title" style="margin-bottom:0">Historique sessions</div>
+      <div class="history-list" id="historyList">
+        <div style="color:var(--muted);font-size:0.75rem;font-family:'Space Mono',monospace;margin-top:12px">Aucun test complété...</div>
+      </div>
+    </div>
+
+    <!-- WORLD OPEN LEADERBOARD -->
+    <div class="panel">
+      <div class="section-title" style="margin-bottom:0">🌍 World Open — Live</div>
+      <div class="world-list" id="worldList"></div>
+    </div>
+  </div>
+</main>
+
+<!-- RESULT OVERLAY -->
+<div class="result-overlay" id="resultOverlay">
+  <div class="result-card">
+    <div class="result-rank-badge" id="resultRankBadge"></div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px">
+      <div class="result-wpm" id="resultWpm">0</div>
+      <div class="new-best" id="newBest">✦ NOUVEAU RECORD</div>
+    </div>
+    <div class="result-wpm-label">mots par minute</div>
+    <canvas id="resultGraph"></canvas>
+    <div class="result-stats">
+      <div class="result-stat">
+        <div class="result-stat-val" id="resultAcc">0%</div>
+        <div class="result-stat-label">Précision</div>
+      </div>
+      <div class="result-stat">
+        <div class="result-stat-val" id="resultErrors">0</div>
+        <div class="result-stat-label">Erreurs</div>
+      </div>
+      <div class="result-stat">
+        <div class="result-stat-val" id="resultChars">0</div>
+        <div class="result-stat-label">Caractères</div>
+      </div>
+    </div>
+    <div class="world-rank-result" id="worldRankResult"></div>
+    <div class="section-title" style="margin-bottom:8px">Touches à améliorer</div>
+    <div class="weak-keys" id="weakKeys"></div>
+    <div class="result-btns">
+      <button class="btn-primary" onclick="resetGame(); closeResult()">↺ Recommencer</button>
+      <button class="btn-secondary" onclick="closeResult()">Voir stats</button>
+    </div>
+  </div>
+</div>
+
+<!-- COUNTDOWN -->
+<div class="countdown-overlay" id="countdownOverlay"></div>
+
+<footer>
+  TypeSpeed PRO — World Open Edition &nbsp;|&nbsp; Aucune pub, aucune distraction &nbsp;|&nbsp; Open Source
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════
+// TEXTS POOL — French + multilingual
+// ═══════════════════════════════════════════════
+const texts = [
+  "La vie est un mystère qu'il faut vivre, et non un problème à résoudre. Chaque jour est une nouvelle occasion de grandir, d'apprendre et de se surpasser. Ne perdez jamais de vue ce qui vous rend vivant.",
+  "La technologie n'est que l'outil. Ce qui compte, c'est la façon dont on s'en sert pour construire quelque chose de plus grand que soi. L'innovation naît de la curiosité et se nourrit de la persévérance.",
+  "Il était une fois, au fond d'une forêt enchantée, un village où les habitants parlaient aux arbres et les arbres répondaient. La magie n'était pas un secret, c'était simplement la nature qui s'exprimait librement.",
+  "La musique est le langage de l'âme. Elle traverse les frontières, efface les différences et réunit les cœurs. Un accord suffit parfois pour dire ce que mille mots ne parviendraient jamais à exprimer.",
+  "Les étoiles ne brillent pas toujours pour être admirées. Parfois elles guident ceux qui sont perdus dans la nuit, rappelant que même dans l'obscurité la plus profonde, il y a toujours une lumière quelque part.",
+  "Chaque ligne de code est une pensée traduite en action. Le programmeur est un architecte de l'invisible, construisant des ponts entre l'humain et la machine, transformant les idées en réalité numérique.",
+  "Le courage n'est pas l'absence de peur, mais la décision que quelque chose d'autre est plus important que la peur. Se lever chaque matin avec l'intention d'agir, voilà le véritable acte de bravoure.",
+  "L'art de lire les mots rapidement sans perdre leur sens est celui qui distingue le lecteur ordinaire du lecteur extraordinaire. La vitesse n'est rien sans la compréhension qui l'accompagne.",
+];
+
+// ═══════════════════════════════════════════════
+// WORLD OPEN DATA (simulated live players)
+// ═══════════════════════════════════════════════
+const worldPlayers = [
+  { name: "kira_fast", flag: "🇯🇵", wpm: 142, country: "Japon" },
+  { name: "speedtype_kr", flag: "🇰🇷", wpm: 138, country: "Corée" },
+  { name: "typezilla", flag: "🇺🇸", wpm: 127, country: "USA" },
+  { name: "klavierheld", flag: "🇩🇪", wpm: 121, country: "Allemagne" },
+  { name: "rapidkeys_br", flag: "🇧🇷", wpm: 118, country: "Brésil" },
+  { name: "phoenix_fr", flag: "🇫🇷", wpm: 115, country: "France" },
+  { name: "blaze_uk", flag: "🇬🇧", wpm: 112, country: "UK" },
+  { name: "swift_ca", flag: "🇨🇦", wpm: 109, country: "Canada" },
+  { name: "pro_typer_in", flag: "🇮🇳", wpm: 104, country: "Inde" },
+  { name: "veloz_mx", flag: "🇲🇽", wpm: 98, country: "Mexique" },
+];
+
+// Keyboard layout
+const keyRows = [
+  ['A','Z','E','R','T','Y','U','I','O','P'],
+  ['Q','S','D','F','G','H','J','K','L','M'],
+  ['W','X','C','V','B','N','⌫'],
+  ['ESPACE']
+];
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let currentText = '';
+let charElements = [];
+let currentIndex = 0;
+let errors = 0;
+let totalTyped = 0;
+let started = false;
+let finished = false;
+let startTime = null;
+let timer = null;
+let wpmHistory = [];
+let keyErrors = {};
+let currentMode = { type: 'time', val: 30 };
+let streak = 0;
+let maxStreak = 0;
+let zenMode = false;
+let wordsLeft = 0;
+let correctChars = 0;
+let audioCtx = null;
+let lastWpmSample = 0;
+let graphInterval = null;
+
+// ═══════════════════════════════════════════════
+// AUDIO — Web Audio API (no external files)
+// ═══════════════════════════════════════════════
+function initAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+function playKeySound(isError) {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.type = isError ? 'sawtooth' : 'sine';
+  osc.frequency.setValueAtTime(isError ? 220 : 800 + Math.random() * 200, audioCtx.currentTime);
+  gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + (isError ? 0.15 : 0.06));
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.15);
+}
+
+// ═══════════════════════════════════════════════
+// KEYBOARD BUILD
+// ═══════════════════════════════════════════════
+function buildKeyboard() {
+  const kb = document.getElementById('keyboard');
+  kb.innerHTML = '';
+  keyRows.forEach(row => {
+    const rowEl = document.createElement('div');
+    rowEl.className = 'key-row';
+    row.forEach(k => {
+      const keyEl = document.createElement('div');
+      keyEl.className = 'key';
+      if (k === 'ESPACE') keyEl.classList.add('space-key');
+      else if (k === '⌫') keyEl.classList.add('wide');
+      keyEl.textContent = k;
+      keyEl.id = 'key-' + k;
+      keyEl.dataset.heat = '0';
+      keyEl.innerHTML = k + '<div class="error-dot"></div>';
+      rowEl.appendChild(keyEl);
+    });
+    kb.appendChild(rowEl);
+  });
+}
+
+function updateKeyHeat(key, isError) {
+  const k = key === ' ' ? 'ESPACE' : key.toUpperCase();
+  if (!keyErrors[k]) keyErrors[k] = { total: 0, errors: 0 };
+  keyErrors[k].total++;
+  if (isError) keyErrors[k].errors++;
+
+  const el = document.getElementById('key-' + k);
+  if (!el) return;
+  const rate = keyErrors[k].errors / keyErrors[k].total;
+  let heat = 0;
+  if (rate > 0.5) heat = 4;
+  else if (rate > 0.3) heat = 3;
+  else if (rate > 0.1) heat = 2;
+  else if (rate > 0) heat = 1;
+  el.dataset.heat = heat;
+
+  // Flash active key
+  el.classList.add('active-key');
+  setTimeout(() => el.classList.remove('active-key'), 80);
+}
+
+// ═══════════════════════════════════════════════
+// WORLD OPEN
+// ═══════════════════════════════════════════════
+function buildWorldLeaderboard(userWpm = null) {
+  const list = document.getElementById('worldList');
+  let players = [...worldPlayers];
+
+  // Add user to leaderboard
+  if (userWpm !== null) {
+    players.push({ name: 'Vous', flag: '🇨🇭', wpm: userWpm, you: true });
+  }
+
+  players.sort((a, b) => b.wpm - a.wpm);
+  list.innerHTML = '';
+
+  const top5 = players.slice(0, 5);
+  top5.forEach((p, i) => {
+    const item = document.createElement('div');
+    item.className = 'world-item' + (p.you ? ' you' : '');
+    item.innerHTML = `
+      <span class="world-rank">${i + 1}</span>
+      <span class="world-flag">${p.flag}</span>
+      <span class="world-name">${p.you ? '<strong>Vous</strong>' : p.name}</span>
+      <span class="world-wpm">${p.wpm} <small style="color:var(--muted);font-size:0.6rem">WPM</small></span>
+    `;
+    list.appendChild(item);
+  });
+
+  // Find user rank globally
+  const fullRank = players.findIndex(p => p.you) + 1;
+  return fullRank;
+}
+
+function buildWorldTicker() {
+  const ticker = document.getElementById('worldTicker');
+  const events = [...worldPlayers, ...worldPlayers].map(p =>
+    `<span>${p.flag} <strong>${p.name}</strong> vient de scorer <strong>${p.wpm + Math.floor(Math.random()*5)} WPM</strong></span>`
+  );
+  ticker.innerHTML = events.join(' &nbsp;·&nbsp; ');
+}
+
+// ═══════════════════════════════════════════════
+// TEXT & DISPLAY
+// ═══════════════════════════════════════════════
+function pickText() {
+  const pool = [...texts];
+  if (currentMode.type === 'words') {
+    // Generate word-count based text
+    const allWords = texts.join(' ').split(' ');
+    const shuffled = allWords.sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, currentMode.val).join(' ');
+  }
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function renderText() {
+  const display = document.getElementById('textDisplay');
+  display.innerHTML = '';
+  charElements = [];
+  currentText.split('').forEach((ch, i) => {
+    const span = document.createElement('span');
+    span.className = 'char' + (i === 0 ? ' current' : '');
+    span.textContent = ch;
+    display.appendChild(span);
+    charElements.push(span);
+  });
+}
+
+// ═══════════════════════════════════════════════
+// TIMER & WPM
+// ═══════════════════════════════════════════════
+function calcWpm() {
+  if (!startTime) return 0;
+  const elapsed = (Date.now() - startTime) / 60000;
+  return Math.round((correctChars / 5) / Math.max(elapsed, 0.001));
+}
+
+function calcAcc() {
+  if (totalTyped === 0) return 100;
+  return Math.round(((totalTyped - errors) / totalTyped) * 100);
+}
+
+function startTimer() {
+  if (currentMode.type === 'time') {
+    let remaining = currentMode.val;
+    document.getElementById('liveTime').textContent = remaining;
+    timer = setInterval(() => {
+      remaining--;
+      document.getElementById('liveTime').textContent = remaining;
+      if (remaining <= 0) { clearInterval(timer); endGame(); }
+    }, 1000);
+  }
+
+  graphInterval = setInterval(() => {
+    wpmHistory.push(calcWpm());
+    drawLiveGraph();
+  }, 1000);
+}
+
+// ═══════════════════════════════════════════════
+// CANVAS GRAPHS
+// ═══════════════════════════════════════════════
+function drawLiveGraph() {
+  const canvas = document.getElementById('wpmGraph');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+  canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  const w = canvas.offsetWidth, h = canvas.offsetHeight;
+  ctx.clearRect(0, 0, w, h);
+  if (wpmHistory.length < 2) return;
+
+  const max = Math.max(...wpmHistory, 10);
+  const pts = wpmHistory.map((v, i) => ({
+    x: (i / (wpmHistory.length - 1)) * w,
+    y: h - (v / max) * (h - 8) - 4
+  }));
+
+  // Gradient fill
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, 'rgba(232,255,71,0.3)');
+  grad.addColorStop(1, 'rgba(232,255,71,0)');
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, h);
+  pts.forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.lineTo(pts[pts.length-1].x, h);
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+  ctx.strokeStyle = '#e8ff47';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+function drawResultGraph() {
+  const canvas = document.getElementById('resultGraph');
+  const ctx = canvas.getContext('2d');
+  canvas.width = 440 * window.devicePixelRatio;
+  canvas.height = 70 * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  const w = 440, h = 70;
+  if (wpmHistory.length < 2) return;
+
+  const max = Math.max(...wpmHistory, 10);
+  const pts = wpmHistory.map((v, i) => ({
+    x: (i / (wpmHistory.length - 1)) * w,
+    y: h - (v / max) * (h - 8) - 4
+  }));
+
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, 'rgba(71,255,212,0.3)');
+  grad.addColorStop(1, 'rgba(71,255,212,0)');
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, h);
+  pts.forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.lineTo(pts[pts.length-1].x, h);
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  ctx.beginPath();
+  pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+  ctx.strokeStyle = '#47ffd4';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Dots
+  pts.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+    ctx.fillStyle = '#47ffd4';
+    ctx.fill();
+  });
+}
+
+// ═══════════════════════════════════════════════
+// GAME LOGIC
+// ═══════════════════════════════════════════════
+function initGame() {
+  currentText = pickText();
+  currentIndex = 0;
+  errors = 0;
+  totalTyped = 0;
+  correctChars = 0;
+  started = false;
+  finished = false;
+  startTime = null;
+  wpmHistory = [];
+  keyErrors = {};
+  streak = 0;
+  clearInterval(timer);
+  clearInterval(graphInterval);
+
+  renderText();
+  buildKeyboard();
+  document.getElementById('liveWpm').textContent = '—';
+  document.getElementById('liveAcc').textContent = '—';
+  document.getElementById('liveTime').textContent = currentMode.type === 'time' ? currentMode.val : '∞';
+  document.getElementById('progressBar').style.width = '0%';
+  document.getElementById('liveStreak').textContent = '0';
+
+  const canvas = document.getElementById('wpmGraph');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  document.getElementById('hiddenInput').value = '';
+  document.getElementById('hiddenInput').focus();
+}
+
+function handleInput(e) {
+  if (finished) return;
+  initAudio();
+
+  const typed = e.data;
+
+  if (e.inputType === 'deleteContentBackward') {
+    handleBackspace();
+    return;
+  }
+
+  if (!typed || currentIndex >= charElements.length) return;
+
+  if (!started) {
+    started = true;
+    startTime = Date.now();
+    startTimer();
+  }
+
+  const expected = currentText[currentIndex];
+  const isCorrect = typed === expected;
+
+  totalTyped++;
+  updateKeyHeat(typed, !isCorrect);
+  playKeySound(!isCorrect);
+
+  if (isCorrect) {
+    charElements[currentIndex].className = 'char correct';
+    correctChars++;
+    streak++;
+    maxStreak = Math.max(maxStreak, streak);
+  } else {
+    charElements[currentIndex].className = 'char wrong';
+    errors++;
+    streak = 0;
+    // Shake
+    const c = document.getElementById('typingContainer');
+    c.classList.remove('shake');
+    void c.offsetWidth;
+    c.classList.add('shake');
+  }
+
+  document.getElementById('liveStreak').textContent = streak;
+  currentIndex++;
+
+  // Update cursor
+  if (currentIndex < charElements.length) {
+    charElements[currentIndex].classList.add('current');
+  }
+
+  // Update live metrics
+  const wpm = calcWpm();
+  const acc = calcAcc();
+  document.getElementById('liveWpm').textContent = wpm;
+  document.getElementById('liveAcc').textContent = acc + '%';
+
+  // Progress bar
+  const progress = (currentIndex / charElements.length) * 100;
+  document.getElementById('progressBar').style.width = progress + '%';
+
+  // Word mode: end when all chars typed
+  if (currentMode.type === 'words' && currentIndex >= charElements.length) {
+    endGame();
+  }
+
+  document.getElementById('hiddenInput').value = '';
+}
+
+function handleBackspace() {
+  if (currentIndex <= 0) return;
+  currentIndex--;
+  charElements[currentIndex].className = 'char current';
+  if (currentIndex + 1 < charElements.length) {
+    charElements[currentIndex + 1].classList.remove('current');
+  }
+  // Recalculate
+  let c = 0, e = 0;
+  charElements.slice(0, currentIndex).forEach(el => {
+    if (el.classList.contains('correct')) c++;
+    if (el.classList.contains('wrong')) e++;
+  });
+  correctChars = c;
+  errors = e;
+  totalTyped = currentIndex;
+  document.getElementById('hiddenInput').value = '';
+}
+
+function endGame() {
+  finished = true;
+  clearInterval(timer);
+  clearInterval(graphInterval);
+  wpmHistory.push(calcWpm());
+
+  const finalWpm = calcWpm();
+  const finalAcc = calcAcc();
+
+  // Best score
+  const best = parseInt(localStorage.getItem('ts_best') || '0');
+  const isNewBest = finalWpm > best;
+  if (isNewBest) localStorage.setItem('ts_best', finalWpm);
+  document.getElementById('bestWpmHeader').textContent = 'Best: ' + Math.max(finalWpm, best) + ' WPM';
+
+  // Streak
+  const currStreak = parseInt(localStorage.getItem('ts_streak') || '0') + 1;
+  localStorage.setItem('ts_streak', currStreak);
+  document.getElementById('streakCount').textContent = currStreak;
+
+  // Save to history
+  saveHistory(finalWpm, finalAcc);
+
+  // World rank
+  const worldRank = buildWorldLeaderboard(finalWpm);
+
+  // Show result
+  showResult(finalWpm, finalAcc, worldRank, isNewBest);
+}
+
+function showResult(wpm, acc, worldRank, isNewBest) {
+  document.getElementById('resultWpm').textContent = wpm;
+  document.getElementById('resultAcc').textContent = acc + '%';
+  document.getElementById('resultErrors').textContent = errors;
+  document.getElementById('resultChars').textContent = correctChars;
+
+  // Rank badge
+  let rank, rankColor;
+  if (wpm >= 100) { rank = '🏆 Expert'; rankColor = 'linear-gradient(135deg, #e8ff47, #ffd700)'; }
+  else if (wpm >= 70) { rank = '⚡ Avancé'; rankColor = 'linear-gradient(135deg, #47ffd4, #47b0ff)'; }
+  else if (wpm >= 40) { rank = '🎯 Intermédiaire'; rankColor = 'linear-gradient(135deg, #7b47ff, #47ffd4)'; }
+  else { rank = '🌱 Débutant'; rankColor = 'linear-gradient(135deg, #555, #888)'; }
+
+  const badge = document.getElementById('resultRankBadge');
+  badge.textContent = rank;
+  badge.style.background = rankColor;
+  badge.style.color = wpm >= 40 ? '#000' : '#fff';
+
+  // World rank
+  document.getElementById('worldRankResult').innerHTML =
+    `Classement World Open : <strong>#${worldRank}</strong> sur ${worldPlayers.length + 1} joueurs actifs`;
+
+  // New best
+  document.getElementById('newBest').style.display = isNewBest ? 'inline-block' : 'none';
+
+  // Weak keys
+  const weakEl = document.getElementById('weakKeys');
+  weakEl.innerHTML = '';
+  const weakKeys = Object.entries(keyErrors)
+    .filter(([k, v]) => v.errors > 0)
+    .sort((a, b) => (b[1].errors / b[1].total) - (a[1].errors / a[1].total))
+    .slice(0, 6);
+
+  if (weakKeys.length === 0) {
+    weakEl.innerHTML = '<span style="color:var(--accent2);font-family:Space Mono,monospace;font-size:0.8rem">✓ Aucune faiblesse détectée !</span>';
+  } else {
+    weakKeys.forEach(([key, data]) => {
+      const badge = document.createElement('div');
+      badge.className = 'weak-key-badge';
+      badge.title = `${data.errors}/${data.total} erreurs`;
+      badge.textContent = key === 'ESPACE' ? '␣' : key;
+      weakEl.appendChild(badge);
+    });
+  }
+
+  document.getElementById('resultOverlay').classList.add('show');
+  drawResultGraph();
+}
+
+function closeResult() {
+  document.getElementById('resultOverlay').classList.remove('show');
+}
+
+// ═══════════════════════════════════════════════
+// HISTORY
+// ═══════════════════════════════════════════════
+function saveHistory(wpm, acc) {
+  let history = JSON.parse(localStorage.getItem('ts_history') || '[]');
+  history.unshift({ wpm, acc, date: new Date().toLocaleTimeString('fr', { hour: '2-digit', minute: '2-digit' }) });
+  history = history.slice(0, 8);
+  localStorage.setItem('ts_history', JSON.stringify(history));
+  renderHistory(history);
+}
+
+function renderHistory(history) {
+  const list = document.getElementById('historyList');
+  if (!history || history.length === 0) return;
+  list.innerHTML = '';
+  history.forEach(h => {
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    item.innerHTML = `
+      <span class="history-wpm">${h.wpm} WPM</span>
+      <span class="history-acc">${h.acc}%</span>
+      <span class="history-time">${h.date}</span>
+    `;
+    list.appendChild(item);
+  });
+}
+
+// ═══════════════════════════════════════════════
+// RESET & MODE
+// ═══════════════════════════════════════════════
+function resetGame() {
+  initGame();
+}
+
+function setMode(btn) {
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  const type = btn.dataset.mode;
+  const val = btn.dataset.val;
+
+  if (type === 'zen') {
+    zenMode = true;
+    currentMode = { type: 'zen', val: 'zen' };
+    document.getElementById('keyboardSection').style.display = 'none';
+  } else {
+    zenMode = false;
+    document.getElementById('keyboardSection').style.display = '';
+    currentMode = { type, val: parseInt(val) };
+  }
+
+  resetGame();
+}
+
+// ═══════════════════════════════════════════════
+// KEYBOARD EVENTS
+// ═══════════════════════════════════════════════
+document.getElementById('hiddenInput').addEventListener('input', handleInput);
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    resetGame();
+  }
+  if (e.key === 'Escape') closeResult();
+});
+
+// Mode buttons
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => setMode(btn));
+});
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+function init() {
+  buildWorldTicker();
+  buildWorldLeaderboard();
+
+  // Load history
+  const history = JSON.parse(localStorage.getItem('ts_history') || '[]');
+  renderHistory(history);
+
+  // Load best
+  const best = localStorage.getItem('ts_best');
+  if (best) document.getElementById('bestWpmHeader').textContent = 'Best: ' + best + ' WPM';
+
+  // Load streak
+  const streak = localStorage.getItem('ts_streak') || 0;
+  document.getElementById('streakCount').textContent = streak;
+
+  // Simulate world fluctuations
+  setInterval(() => {
+    worldPlayers.forEach(p => {
+      p.wpm += Math.floor(Math.random() * 5) - 2;
+      p.wpm = Math.max(60, Math.min(160, p.wpm));
+    });
+    buildWorldLeaderboard();
+    buildWorldTicker();
+  }, 8000);
+
+  initGame();
+}
+
+init();
+</script>
+</body>
+</html>
