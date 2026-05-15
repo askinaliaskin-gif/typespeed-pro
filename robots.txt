@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://askinaliaskin-gif.github.io/typespeed-pro/sitemap.xml
